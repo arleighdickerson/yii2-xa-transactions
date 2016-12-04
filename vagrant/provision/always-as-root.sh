@@ -17,3 +17,10 @@ service php5-fpm restart
 service nginx restart
 service mysql restart
 
+if [ -a /var/run/mysqld/mysqld/mysqld2.sock ]; then
+echo 'mysql server on port 3337 already running';
+else
+    echo 'starting mysql server on port 3337';
+    nohup mysqld_safe --defaults-file=/etc/mysql2/my.cnf --skip-grant-tables &
+fi
+
