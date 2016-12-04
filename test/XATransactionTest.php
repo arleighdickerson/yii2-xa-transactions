@@ -15,19 +15,22 @@ class XATransactionTest extends PHPUnit_Framework_TestCase {
 
     public function testStates() {
         foreach (['commit', 'rollback'] as $finalize) {
-            foreach ([$this->getTx(true), $this->getTx2(true)] as $tx) {
+            $txs = array_map(function ($class) {
+                return new XATransaction($class::getDb());
+            }, $this->getClasses());
+            foreach ($txs as $tx) {
                 $tx->begin();
                 $this->assertEquals(XATransaction::STATE_ACTIVE, $tx->getState());
             }
-            foreach ([$this->getTx(), $this->getTx2()] as $tx) {
+            foreach ($txs as $tx) {
                 $tx->end();
                 $this->assertEquals(XATransaction::STATE_IDLE, $tx->getState());
             }
-            foreach ([$this->getTx(), $this->getTx2()] as $tx) {
+            foreach ($txs as $tx) {
                 $tx->prepare();
                 $this->assertEquals(XATransaction::STATE_PREPARED, $tx->getState());
             }
-            foreach ([$this->getTx(), $this->getTx2()] as $tx) {
+            foreach ($txs as $tx) {
                 $tx->$finalize();
                 $this->assertEquals(XATransaction::STATE_TERMINATED, $tx->getState());
             }
@@ -66,31 +69,7 @@ class XATransactionTest extends PHPUnit_Framework_TestCase {
         }
     }
 
-    private $_tx;
-
-    public function getTx($create = false) {
-        if ($create || $this->_tx === null) {
-            $this->_tx = new XATransaction(Yii::$app->getDb());
-        }
-        return $this->_tx;
-    }
-
-    private $_tx2;
-
-    public function getTx2($create = false) {
-        if ($create || $this->_tx2 === null) {
-            $this->_tx2 = new XATransaction(Yii::$app->get('db2'));
-        }
-        return $this->_tx2;
-    }
-
     private $_classes;
-
-    public function getConnections() {
-        return array_map(function ($class) {
-            return $class::getDb();
-        }, $this->getClasses());
-    }
 
     public function getClasses() {
         if ($this->_classes === null) {
@@ -101,12 +80,5 @@ class XATransactionTest extends PHPUnit_Framework_TestCase {
             $this->_classes = array_combine($classes, $classes);
         }
         return $this->_classes;
-    }
-
-    public function tearDown() {
-        foreach ($this->getConnections() as $db) {
-            $db->close();
-        }
-        parent::tearDown();
     }
 }

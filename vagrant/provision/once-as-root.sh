@@ -123,11 +123,11 @@ nohup mysqld_safe --defaults-file=/etc/mysql2/my.cnf --skip-grant-tables &
 
 
 info "Initialize databases for MySQL"
-mysql -uroot <<< "CREATE SCHEMA xa_transactions_test;
+mysql -uroot <<< "CREATE SCHEMA xa_transactions_test;"
 echo "Done!"
 
 info "Initialize databases for MySQL"
-mysql -uroot -P 3337 -h 127.0.0.1 <<< "CREATE SCHEMA xa_transactions_test;
+mysql -uroot -P 3337 -h 127.0.0.1 <<< "CREATE SCHEMA xa_transactions_test;"
 echo "Done!"
 
 info "Install composer"

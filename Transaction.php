@@ -11,6 +11,12 @@ use yii\base\InvalidConfigException;
 use yii\base\NotSupportedException;
 use yii\base\Object;
 
+/**
+ * A Transaction class that delegates to XA transactions via arls\xa\XATransaction
+ * We patch the autoloader in the extension bootstrap to use this class over the stock transaction class.
+ * Class Transaction
+ * @package yii\db
+ */
 class Transaction extends Object {
     public $db;
     private $_current;
