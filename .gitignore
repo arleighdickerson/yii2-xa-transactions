@@ -24,3 +24,5 @@ composer.phar
 composer.lock
 .hhconfig
 
+.vagrant
+

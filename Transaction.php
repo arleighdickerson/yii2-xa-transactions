@@ -16,7 +16,6 @@ class Transaction extends Object {
     private $_current;
     private $_level = 0;
 
-
     /**
      * Returns a value indicating whether the current transaction is active. Also returns true if the current transaction is idle
      * @return boolean whether this transaction is active. Only an active transaction

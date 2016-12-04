@@ -28,6 +28,11 @@ class XATransaction extends Object {
         parent::__construct($config);
     }
 
+    public function init() {
+        parent::init();
+        $this->getTransactionManager()->registerTransaction($this);
+    }
+
     /**
      * @var Connection the database connection that this transaction is associated with.
      */
@@ -103,7 +108,7 @@ class XATransaction extends Object {
     }
 
     protected function exec($sql) {
-        $gtrid = $this->getTransactionManager()->getId() . "." . $this->getConnectionId();
+        $gtrid = $this->getTransactionManager()->getId();
         $bqual = $this->getId();
         return $this->getDb()->createCommand(str_replace(':xid', "'$gtrid','$bqual'", $sql))->execute();
     }
@@ -120,6 +125,9 @@ class XATransaction extends Object {
      * @return TransactionManager
      */
     protected function getTransactionManager() {
+        if (Yii::$app->get('transactionManager', false) === null) {
+            Yii::$app->set('transactionManager', TransactionManager::class);
+        }
         return Yii::$app->get('transactionManager');
     }
 }

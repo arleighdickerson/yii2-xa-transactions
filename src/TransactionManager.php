@@ -19,9 +19,9 @@ class TransactionManager extends Component {
     public $autoPrepare = true;
 
     /**
-     * @var XATransaction[]
+     * @var \SplObjectStorage
      */
-    private $_transactions = [];
+    private $_transactions;
 
     /**
      * @var Connection[]
@@ -38,6 +38,7 @@ class TransactionManager extends Component {
     public function init() {
         parent::init();
         $this->_id = uniqid();
+        $this->_transactions = new \SplObjectStorage();
     }
 
     /**
@@ -73,17 +74,19 @@ class TransactionManager extends Component {
      * @return XATransaction[]
      */
     protected function getPendingTransactions() {
-        return array_filter($this->_transactions, function ($tx) {
+        foreach ($this->_transactions as $tx) {
             /** @var XATransaction $tx */
-            return $tx->getState() >= XATransaction::STATE_ACTIVE;
-        });
+            if ($tx->getState() >= XATransaction::STATE_ACTIVE) {
+                yield $tx;
+            }
+        }
     }
 
     /**
      * @param XATransaction $transaction
      */
     public function registerTransaction(XATransaction $transaction) {
-        $this->_transactions[] = $transaction;
+        $this->_transactions->attach($transaction);
         if (!in_array($transaction->getDb(), $this->_connections)) {
             $this->_connections[] = $transaction->getDb();
         }
@@ -107,8 +110,12 @@ class TransactionManager extends Component {
      * @throws Exception
      */
     public function getTransactionId(XATransaction $transaction) {
-        if (($id = array_search($transaction, $this->_transactions)) !== false) {
-            return $id;
+        $id = 0;
+        foreach ($this->_transactions as $tx) {
+            if ($tx === $transaction) {
+                return $id;
+            }
+            $id++;
         }
         throw new Exception();
     }
