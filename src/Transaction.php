@@ -14,7 +14,7 @@ use yii\di\Instance;
  * @package arls\xa
  * @see https://dev.mysql.com/doc/refman/5.6/en/xa.html
  */
-class XATransaction extends Object implements XABranchInterface {
+class Transaction extends Object implements BranchInterface {
     const STMT_BEGIN = "XA START :xid;";
     const STMT_END = "XA END :xid;";
     const STMT_PREPARE = "XA PREPARE :xid;";

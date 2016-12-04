@@ -4,7 +4,7 @@
 namespace arls\xa;
 
 
-interface XAInterface {
+interface TransactionInterface {
     public function getId();
 
     public function commit();

@@ -1,7 +1,7 @@
 <?php
 
 namespace arls\xa;
-interface XABranchInterface extends XAInterface {
+interface BranchInterface extends TransactionInterface {
     const STATE_TERMINATED = 0;
     const STATE_ACTIVE = 1;
     const STATE_IDLE = 2;

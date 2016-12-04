@@ -7,7 +7,7 @@ use yii\base\Component;
 use yii\base\Exception;
 use yii\db\Connection;
 
-class TransactionManager extends Component implements XAInterface {
+class TransactionManager extends Component implements TransactionInterface {
     /**
      * @var \SplObjectStorage
      */
@@ -37,13 +37,13 @@ class TransactionManager extends Component implements XAInterface {
 
     public function commit() {
         foreach ($this->_transactions as $tx) {
-            if ($tx->state == XATransaction::STATE_ACTIVE) {
+            if ($tx->state == Transaction::STATE_ACTIVE) {
                 $tx->end();
             }
         }
         try {
             foreach ($this->_transactions as $tx) {
-                if ($tx->state == XATransaction::STATE_IDLE) {
+                if ($tx->state == Transaction::STATE_IDLE) {
                     $tx->prepare();
                 }
             }
@@ -52,25 +52,25 @@ class TransactionManager extends Component implements XAInterface {
             throw $e;
         }
         foreach ($this->_transactions as $tx) {
-            if ($tx->state == XATransaction::STATE_PREPARED) {
+            if ($tx->state == Transaction::STATE_PREPARED) {
                 $tx->commit();
             }
         }
-        $this->terminateGlobalTransaction();
+        $this->regenerateId();
     }
 
     public function rollBack() {
         foreach ($this->_transactions as $tx) {
-            if ($tx->state == XATransaction::STATE_ACTIVE) {
+            if ($tx->state == Transaction::STATE_ACTIVE) {
                 $tx->end();
             }
         }
         foreach ($this->_transactions as $tx) {
-            if ($tx->state > XATransaction::STATE_ACTIVE) {
+            if ($tx->state > Transaction::STATE_ACTIVE) {
                 $tx->rollback();
             }
         }
-        $this->terminateGlobalTransaction();
+        $this->regenerateId();
     }
 
     /**
@@ -83,9 +83,9 @@ class TransactionManager extends Component implements XAInterface {
     }
 
     /**
-     * @param XATransaction $transaction
+     * @param Transaction $transaction
      */
-    public function registerTransaction(XATransaction $transaction) {
+    public function registerTransaction(Transaction $transaction) {
         $this->_transactions->attach($transaction);
         if (!in_array($transaction->getDb(), $this->_connections)) {
             $this->_connections[] = $transaction->getDb();
@@ -114,11 +114,11 @@ class TransactionManager extends Component implements XAInterface {
     }
 
     /**
-     * @param XATransaction $transaction
+     * @param Transaction $transaction
      * @return mixed
      * @throws Exception
      */
-    public function getTransactionId(XATransaction $transaction) {
+    public function getTransactionId(Transaction $transaction) {
         $id = 0;
         foreach ($this->_transactions as $tx) {
             if ($tx === $transaction) {
@@ -131,10 +131,5 @@ class TransactionManager extends Component implements XAInterface {
 
     protected function regenerateId() {
         return $this->_id = uniqid();
-    }
-
-    protected function terminateGlobalTransaction() {
-        $this->regenerateId();
-        $this->_transactions->removeAll($this->_transactions);
     }
 }

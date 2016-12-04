@@ -14,7 +14,7 @@
     <testsuites>
         <testsuite>
             <directory>./tests</directory>
-            <file>XATransactionTest.php</file>
+            <file>TransactionTest.php</file>
         </testsuite>
     </testsuites>
 </phpunit>
