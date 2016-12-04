@@ -13,7 +13,6 @@ use yii\base\Object;
 
 class Transaction extends Object {
     public $db;
-
     private $_current;
     private $_level = 0;
 
@@ -58,7 +57,7 @@ class Transaction extends Object {
         }
 
         $this->_level--;
-        if ($this->_level < 0) {
+        if ($this->_level > 0) {
             Yii::info('Transaction not committed: nested xa transaction not supported', __METHOD__);
         }
         Yii::trace('Commit xa transaction', __METHOD__);
@@ -95,7 +94,7 @@ class Transaction extends Object {
         throw new Exception('Roll back failed: nested transaction not supported.');
     }
 
-    public function setIsolationLevel($level) {
+    public function setIsolationLevel() {
         throw new NotSupportedException(__METHOD__ . ' is not supported.');
     }
 

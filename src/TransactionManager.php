@@ -66,6 +66,7 @@ class TransactionManager extends Component {
         foreach ($this->getPendingTransactions() as $tx) {
             $tx->rollback(true);
         }
+        $this->_id = uniqid();
     }
 
     /**

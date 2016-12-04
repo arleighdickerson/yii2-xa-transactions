@@ -4,11 +4,8 @@
 namespace arls\xa;
 
 use Yii;
-use yii\base\InvalidParamException;
 use yii\base\Object;
 use yii\db\Connection;
-use yii\db\Exception;
-use yii\helpers\VarDumper;
 
 /**
  * Class XATransaction
