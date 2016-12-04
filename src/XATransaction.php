@@ -10,6 +10,7 @@ use yii\db\Connection;
 /**
  * Class XATransaction
  * @package arls\xa
+ * @see https://dev.mysql.com/doc/refman/5.6/en/xa.html
  */
 class XATransaction extends Object {
     const STMT_BEGIN = "XA START :xid;";
