@@ -6,17 +6,14 @@ namespace arls\xa;
 use yii\base\Component;
 use yii\base\Exception;
 use yii\db\Connection;
+use SplObjectStorage;
 
 class TransactionManager extends Component implements TransactionInterface {
     /**
-     * @var \SplObjectStorage
+     * @var SplObjectStorage
      */
     private $_transactions;
 
-    /**
-     * @var Connection[]
-     */
-    private $_connections = [];
 
     /**
      * @var string the (globally) unique id for this transaction manager
@@ -27,7 +24,7 @@ class TransactionManager extends Component implements TransactionInterface {
 
     public function init() {
         parent::init();
-        $this->_transactions = new \SplObjectStorage();
+        $this->_transactions = new SplObjectStorage();
         $this->regenerateId();
     }
 
@@ -87,14 +84,11 @@ class TransactionManager extends Component implements TransactionInterface {
      */
     public function registerTransaction(Transaction $transaction) {
         $this->_transactions->attach($transaction);
-        if (!in_array($transaction->getDb(), $this->_connections)) {
-            $this->_connections[] = $transaction->getDb();
-        }
     }
 
     public function getCurrentTransaction(Connection $connection) {
         foreach ($this->_transactions as $tx) {
-            if ($tx->state && $tx->getDb() == $connection) {
+            if ($tx->state && $tx->db === $connection) {
                 return $tx;
             }
         }
@@ -107,10 +101,14 @@ class TransactionManager extends Component implements TransactionInterface {
      * @throws Exception
      */
     public function getConnectionId(Connection $connection) {
-        if (($id = array_search($connection, $this->_connections)) !== false) {
-            return $id;
+        $set = new SplObjectStorage();
+        foreach ($this->_transactions as $tx) {
+            if ($connection == $tx->getDb()) {
+                return $set->count();
+            }
+            $set->attach($tx);
         }
-        throw new Exception();
+        throw new Exception("Connection not found");
     }
 
     /**

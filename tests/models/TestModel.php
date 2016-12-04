@@ -20,7 +20,7 @@ class TestModel extends ActiveRecord {
     public static function classes() {
         $classes = [
             self::class,
-            TestModel::class
+            OtherModel::class
         ];
         return array_combine($classes, $classes);
     }

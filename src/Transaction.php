@@ -50,29 +50,49 @@ class Transaction extends Object implements BranchInterface {
         return $this->_state;
     }
 
+    /**
+     * @return static
+     */
     public function begin() {
         $this->exec(self::STMT_BEGIN);
         $this->_state = self::STATE_ACTIVE;
+        return $this;
     }
 
+    /**
+     * @return static
+     */
     public function end() {
         $this->exec(self::STMT_END);
         $this->_state = self::STATE_IDLE;
+        return $this;
     }
 
+    /**
+     * @return static
+     */
     public function prepare() {
         $this->exec(self::STMT_PREPARE);
         $this->_state = self::STATE_PREPARED;
+        return $this;
     }
 
+    /**
+     * @return static
+     */
     public function commit() {
         $this->exec(self::STMT_COMMIT);
         $this->_state = self::STATE_TERMINATED;
+        return $this;
     }
 
+    /**
+     * @return static
+     */
     public function rollBack() {
         $this->exec(self::STMT_ROLLBACK);
         $this->_state = self::STATE_TERMINATED;
+        return $this;
     }
 
     public function getId() {

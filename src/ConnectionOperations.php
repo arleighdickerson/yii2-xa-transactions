@@ -28,12 +28,14 @@ class ConnectionOperations extends Object {
             ]);
         }
         $xa->begin();
-        $this->_connection->trigger(Connection::EVENT_BEGIN_TRANSACTION);
         return $xa;
     }
 
-    public function getTransaction() {
+    public function getTransaction($beginIfNone = false) {
         $xa = $this->_transactionManager->getCurrentTransaction($this->_connection);
+        if ($xa === null && $beginIfNone) {
+            $xa = $this->beginTransaction();
+        }
         return $xa !== null && $xa->getState() ? $xa : null;
     }
 
