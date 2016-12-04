@@ -5,15 +5,28 @@ namespace arls\xa;
 
 use yii\base\Component;
 use yii\base\Exception;
-use yii\db\Transaction;
-use ArrayObject;
-use SplObjectStorage;
+use yii\db\Connection;
 
 class TransactionManager extends Component {
     /**
-     * @var SplObjectStorage
+     * @var bool whether to prepare instead of commit when yii\db\Transaction::commit() is called
      */
-    private $_connections;
+    public $prepareOnCommit = false;
+
+    /**
+     * @var bool whether to automatically move transactions into the "prepared" state before committing or rolling back
+     */
+    public $autoPrepare = true;
+
+    /**
+     * @var XATransaction[]
+     */
+    private $_transactions = [];
+
+    /**
+     * @var Connection[]
+     */
+    private $_connections = [];
 
     /**
      * @var string the (globally) unique id for this transaction manager
@@ -24,38 +37,77 @@ class TransactionManager extends Component {
 
     public function init() {
         parent::init();
-        $this->_connections = new SplObjectStorage();
         $this->_id = uniqid();
     }
 
+    /**
+     * @return string
+     */
     public function getId() {
         return $this->_id;
     }
 
-    /**
-     * @param Transaction $transaction
-     */
-    public function registerTransaction($transaction) {
-        if (!$this->_connections->offsetExists($transaction->db)) {
-            $this->_connections->offsetSet($transaction->db, new ArrayObject());
+    public function commitGlobal() {
+        $pending = $this->getPendingTransactions();
+        try {
+            foreach ($pending as $tx) {
+                $tx->prepare(true);
+            }
+        } catch (\Exception $e) {
+            $this->rollbackGlobal();
+            throw $e;
         }
-        $this->_connections->offsetGet($transaction->db)->append($transaction);
+        foreach ($pending as $tx) {
+            $tx->commit();
+        }
     }
 
-    public function getConnectionId($connection) {
-        if (($id = array_search($connection, $this->_connections->offsetGet($connection->db))) !== false) {
+    public function rollbackGlobal() {
+        foreach ($this->getPendingTransactions() as $tx) {
+            $tx->rollback(true);
+        }
+    }
+
+    /**
+     * @return XATransaction[]
+     */
+    protected function getPendingTransactions() {
+        return array_filter($this->_transactions, function ($tx) {
+            /** @var XATransaction $tx */
+            return $tx->getState() >= XATransaction::STATE_ACTIVE;
+        });
+    }
+
+    /**
+     * @param XATransaction $transaction
+     */
+    public function registerTransaction(XATransaction $transaction) {
+        $this->_transactions[] = $transaction;
+        if (!in_array($transaction->getDb(), $this->_connections)) {
+            $this->_connections[] = $transaction->getDb();
+        }
+    }
+
+    /**
+     * @param Connection $connection
+     * @return mixed
+     * @throws Exception
+     */
+    public function getConnectionId(Connection $connection) {
+        if (($id = array_search($connection, $this->_connections)) !== false) {
             return $id;
         }
         throw new Exception();
     }
 
-    public function getTransactionId($transaction) {
-        $id = 0;
-        foreach ($this->_connections as $db) {
-            if ($transaction->db == $db) {
-                return $id;
-            }
-            $id++;
+    /**
+     * @param XATransaction $transaction
+     * @return mixed
+     * @throws Exception
+     */
+    public function getTransactionId(XATransaction $transaction) {
+        if (($id = array_search($transaction, $this->_transactions)) !== false) {
+            return $id;
         }
         throw new Exception();
     }

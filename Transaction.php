@@ -4,55 +4,48 @@
 namespace yii\db;
 
 use arls\xa\TransactionManager;
+use arls\xa\XATransaction;
 use Yii;
+use yii\base\Exception;
 use yii\base\InvalidConfigException;
+use yii\base\NotSupportedException;
 use yii\base\Object;
 
 class Transaction extends Object {
-    const STMT_BEGIN = "XA START :xid;";
-    const STMT_END = "XA END :xid;";
-    const STMT_PREPARE = "XA PREPARE :xid;";
-    const STMT_COMMIT = "XA COMMIT :xid;";
-    const STMT_ROLLBACK = "XA ROLLBACK :xid;";
-
-    /**
-     * @var Connection the database connection that this transaction is associated with.
-     */
     public $db;
 
-    /**
-     * @var integer the nesting level of the transaction. 0 means the outermost level.
-     */
-    private $_level;
+    private $_current;
+    private $_level = 0;
 
 
     /**
-     * Returns a value indicating whether this transaction is active.
+     * Returns a value indicating whether the current transaction is active. Also returns true if the current transaction is idle
      * @return boolean whether this transaction is active. Only an active transaction
      * can [[commit()]] or [[rollBack()]].
      */
     public function getIsActive() {
-        return $this->_level !== null && $this->db && $this->db->isActive;
+        return $this->getCurrent()->getState() >= XATransaction::STATE_ACTIVE && $this->db && $this->db->isActive;
     }
 
+    /**
+     * Begins an transaction.
+     */
     public function begin() {
         if ($this->db === null) {
             throw new InvalidConfigException('Transaction::db must be set.');
         }
-        $this->db->open();
-
-        if ($this->_level === null) {
-            Yii::trace('Begin transaction', __METHOD__);
-
+        Yii::trace('Begin xa transaction', __METHOD__);
+        $current = $this->getCurrent();
+        if ($this->_level > 0) {
+            Yii::info('Transaction not started: nested xa transaction not supported', __METHOD__);
+        } elseif ($current === null || $current->getState() == XATransaction::STATE_TERMINATED) {
+            $tx = Yii::createObject(XATransaction::class, [$this->db]);
+            $tx->begin();
+            $this->getTransactionManager()->registerTransaction($tx);
+            $this->_current = $tx;
             $this->db->trigger(Connection::EVENT_BEGIN_TRANSACTION);
-            $this->_level = 0;
-            //send begin (db) root tx sql
-
-            return;
         }
-
         $this->_level++;
-        //send begin (db) child tx sql
     }
 
     /**
@@ -65,16 +58,13 @@ class Transaction extends Object {
         }
 
         $this->_level--;
-        if ($this->_level === 0) {
-            Yii::trace('Commit transaction', __METHOD__);
-            //send end (db) root tx sql
-            //send prepare (db) root tx sql
-            //send commit (db) root tx sql
-            $this->db->trigger(Connection::EVENT_COMMIT_TRANSACTION);
-            return;
+        if ($this->_level < 0) {
+            Yii::info('Transaction not committed: nested xa transaction not supported', __METHOD__);
         }
-
-        //send commit (db) child tx sql
+        Yii::trace('Commit xa transaction', __METHOD__);
+        $this->getCurrent()->{$this->getTransactionManager()->prepareOnCommit ? "prepare" : "commit"}();
+        $this->db->trigger(Connection::EVENT_COMMIT_TRANSACTION);
+        return;
     }
 
     /**
@@ -83,34 +73,51 @@ class Transaction extends Object {
      */
     public function rollBack() {
         if (!$this->getIsActive()) {
+            // do nothing if transaction is not active: this could be the transaction is committed
+            // but the event handler to "commitTransaction" throw an exception
             return;
         }
+
         $this->_level--;
         if ($this->_level === 0) {
-            Yii::trace('Roll back transaction', __METHOD__);
-            //send rollback (db) tx root sql
+            Yii::trace('Roll back xa transaction', __METHOD__);
+            $tx = $this->getCurrent();
+            if ($tx->getIsActive()) {
+                $tx->end();
+            }
+            $this->getCurrent()->rollBack(false);
             $this->db->trigger(Connection::EVENT_ROLLBACK_TRANSACTION);
             return;
         }
-        //send rollback (db) tx child sql
+
+        Yii::info('Transaction not rolled back: nested transaction not supported', __METHOD__);
+        // throw an exception to fail the outer transaction
+        throw new Exception('Roll back failed: nested transaction not supported.');
+    }
+
+    public function setIsolationLevel($level) {
+        throw new NotSupportedException(__METHOD__ . ' is not supported.');
+    }
+
+    /**
+     * @return integer The current nesting level of the transaction.
+     * @since 2.0.8
+     */
+    public function getLevel() {
+        return $this->_level;
+    }
+
+    /**
+     * @return XATransaction|null
+     */
+    protected function getCurrent() {
+        return $this->_current;
     }
 
     /**
      * @return TransactionManager
      */
-    public function getTransactionManager() {
+    protected function getTransactionManager() {
         return Yii::$app->get('transactionManager');
-    }
-
-    protected function exec($sql, $bqual = null) {
-        if ($bqual === null) {
-            $bqual = $this->_level;
-        }
-        $gtrid = $this->getTransactionManager()->getId() . $this->getConnectionId();
-        return $this->db->createCommand(str_replace(':xid', "'$gtrid','$bqual'", $sql))->execute();
-    }
-
-    protected function getConnectionId() {
-        $this->getTransactionManager()->getConnectionId($this->db);
     }
 }
