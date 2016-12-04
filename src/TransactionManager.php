@@ -15,9 +15,21 @@ class TransactionManager extends Component {
      */
     private $_connections;
 
+    /**
+     * @var string the (globally) unique id for this transaction manager
+     * all global transaction ids for transactions belonging to this manager
+     * will start with this value
+     */
+    private $_id;
+
     public function init() {
         parent::init();
         $this->_connections = new SplObjectStorage();
+        $this->_id = uniqid();
+    }
+
+    public function getId() {
+        return $this->_id;
     }
 
     /**
