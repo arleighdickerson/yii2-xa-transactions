@@ -1,0 +1,24 @@
+{
+  "name": "arls/yii2-xa-transactions",
+  "type": "yii2-extension",
+  "authors": [
+    {
+      "name": "Arleigh Dickerson",
+      "email": "arls@arleighdickerson.us"
+    }
+  ],
+  "require": {
+    "yiisoft/yii2": "~2.0.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "5.5.*"
+  },
+  "autoload": {
+    "psr-4": {
+      "arls\\xa\\": "/src"
+    }
+  },
+  "extra": {
+    "bootstrap": "arls\\xa\\Bootstrap"
+  }
+}
