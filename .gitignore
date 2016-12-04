@@ -26,3 +26,5 @@ composer.lock
 
 .vagrant
 
+nohup.out
+

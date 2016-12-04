@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS `test` (
 ) ENGINE = InnoDB;
 SQL;
 Yii::$app->getDb()->createCommand($sql)->execute();
+
 $sql = <<<SQL
 CREATE TABLE IF NOT EXISTS `other` (
   `id`          INT(11)     NOT NULL AUTO_INCREMENT,

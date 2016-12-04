@@ -1,3 +1,6 @@
+XA Transactions in yii2 
+see https://dev.mysql.com/doc/refman/5.6/en/xa.html
+
 to run tests:
 
 ```bash

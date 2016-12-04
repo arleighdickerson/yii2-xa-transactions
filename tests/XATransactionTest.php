@@ -17,7 +17,7 @@ class XATransactionTest extends PHPUnit_Framework_TestCase {
         foreach (['commit', 'rollback'] as $finalize) {
             $txs = array_map(function ($class) {
                 return new XATransaction($class::getDb());
-            }, $this->getClasses());
+            }, $this->_classes);
             foreach ($txs as $tx) {
                 $tx->begin();
                 $this->assertEquals(XATransaction::STATE_ACTIVE, $tx->getState());
@@ -42,7 +42,7 @@ class XATransactionTest extends PHPUnit_Framework_TestCase {
             /** @var ActiveRecord[] $models */
             $counts = array_map(function ($class) {
                 return $class::find()->count();
-            }, $this->getClasses());
+            }, $this->_classes);
             $assertCount = function ($delta) use ($counts) {
                 foreach ($counts as $class => $count) {
                     $this->assertEquals($count + $delta, $class::find()->count());
@@ -51,11 +51,11 @@ class XATransactionTest extends PHPUnit_Framework_TestCase {
             $assertCount(0);
             $txs = array_map(function ($class) {
                 return new XATransaction($class::getDb());
-            }, $this->getClasses());
+            }, $this->_classes);
             foreach ($txs as $class => $tx) {
                 $tx->begin();
             }
-            foreach ($this->getClasses() as $class) {
+            foreach ($this->_classes as $class) {
                 $model = new $class;
                 $model->value = uniqid();
                 $model->save(false);
@@ -69,16 +69,8 @@ class XATransactionTest extends PHPUnit_Framework_TestCase {
         }
     }
 
-    private $_classes;
-
-    public function getClasses() {
-        if ($this->_classes === null) {
-            $classes = [
-                TestModel::class,
-                OtherModel::class
-            ];
-            $this->_classes = array_combine($classes, $classes);
-        }
-        return $this->_classes;
-    }
+    private $_classes = [
+        TestModel::class => TestModel::class,
+        OtherModel::class => OtherModel::class
+    ];
 }
