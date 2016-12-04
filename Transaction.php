@@ -4,7 +4,7 @@
 namespace yii\db;
 
 use arls\xa\TransactionManager;
-use arls\xa\XATransaction;
+use arls\xa\Branch;
 use Yii;
 use yii\base\Exception;
 use yii\base\InvalidConfigException;
@@ -19,7 +19,6 @@ use yii\base\Object;
  */
 class Transaction extends Object {
     public $db;
-    private $_current;
     private $_level = 0;
 
     /**
@@ -28,7 +27,9 @@ class Transaction extends Object {
      * can [[commit()]] or [[rollBack()]].
      */
     public function getIsActive() {
-        return $this->getCurrent()->getState() >= XATransaction::STATE_ACTIVE && $this->db && $this->db->isActive;
+        return ($this->getCurrent() === null || $this->getCurrent()->getState() >= Branch::STATE_ACTIVE)
+            && $this->db
+            && $this->db->isActive;
     }
 
     /**
@@ -39,14 +40,13 @@ class Transaction extends Object {
             throw new InvalidConfigException('Transaction::db must be set.');
         }
         Yii::trace('Begin xa transaction', __METHOD__);
-        $current = $this->getCurrent();
-        if ($this->_level > 0) {
+        $tx = $this->getCurrent();
+        if ($tx !== null && $tx->getState()) {
             Yii::info('Transaction not started: nested xa transaction not supported', __METHOD__);
-        } elseif ($current === null || $current->getState() == XATransaction::STATE_TERMINATED) {
-            $tx = Yii::createObject(XATransaction::class, [$this->db]);
+        } else {
+            $tx = Yii::createObject(Branch::class, [$this->db]);
+            $this->getTransactionManager()->registerBranch($tx);
             $tx->begin();
-            $this->getTransactionManager()->registerTransaction($tx);
-            $this->_current = $tx;
             $this->db->trigger(Connection::EVENT_BEGIN_TRANSACTION);
         }
         $this->_level++;
@@ -64,10 +64,20 @@ class Transaction extends Object {
         $this->_level--;
         if ($this->_level > 0) {
             Yii::info('Transaction not committed: nested xa transaction not supported', __METHOD__);
+        } else {
+            Yii::trace('Commit xa transaction', __METHOD__);
+            $tx = $this->getCurrent();
+            if ($this->getTransactionManager()->autoPrepare) {
+                if ($tx->getState() == Branch::STATE_ACTIVE) {
+                    $tx->end();
+                }
+                if ($tx->getState() == Branch::STATE_IDLE) {
+                    $tx->prepare();
+                }
+            }
+            $tx->commit();
+            $this->db->trigger(Connection::EVENT_COMMIT_TRANSACTION);
         }
-        Yii::trace('Commit xa transaction', __METHOD__);
-        $this->getCurrent()->{$this->getTransactionManager()->prepareOnCommit ? "prepare" : "commit"}();
-        $this->db->trigger(Connection::EVENT_COMMIT_TRANSACTION);
         return;
     }
 
@@ -112,16 +122,16 @@ class Transaction extends Object {
     }
 
     /**
-     * @return XATransaction|null
+     * @return Branch|null
      */
     protected function getCurrent() {
-        return $this->_current;
+        return $this->getTransactionManager()->getCurrentBranch($this->db);
     }
 
     /**
      * @return TransactionManager
      */
-    protected function getTransactionManager() {
+    public function getTransactionManager() {
         return Yii::$app->get('transactionManager');
     }
 }

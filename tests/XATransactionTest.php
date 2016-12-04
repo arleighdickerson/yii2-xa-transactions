@@ -8,6 +8,7 @@ use yii\base\Model;
 use yii\db\ActiveRecord;
 
 class XATransactionTest extends PHPUnit_Framework_TestCase {
+
     public function testSanity() {
         $this->assertGreaterThan(0, TestModel::find()->count());
         $this->assertGreaterThan(0, OtherModel::find()->count());
@@ -16,8 +17,11 @@ class XATransactionTest extends PHPUnit_Framework_TestCase {
     public function testStates() {
         foreach (['commit', 'rollback'] as $finalize) {
             $txs = array_map(function ($class) {
-                return new XATransaction($class::getDb());
-            }, $this->_classes);
+                return Yii::createObject([
+                    'class' => XATransaction::class,
+                    'db' => $class::getDb()
+                ]);
+            }, TestModel::classes());
             foreach ($txs as $tx) {
                 $tx->begin();
                 $this->assertEquals(XATransaction::STATE_ACTIVE, $tx->getState());
@@ -42,7 +46,7 @@ class XATransactionTest extends PHPUnit_Framework_TestCase {
             /** @var ActiveRecord[] $models */
             $counts = array_map(function ($class) {
                 return $class::find()->count();
-            }, $this->_classes);
+            }, TestModel::classes());
             $assertCount = function ($delta) use ($counts) {
                 foreach ($counts as $class => $count) {
                     $this->assertEquals($count + $delta, $class::find()->count());
@@ -50,27 +54,50 @@ class XATransactionTest extends PHPUnit_Framework_TestCase {
             };
             $assertCount(0);
             $txs = array_map(function ($class) {
-                return new XATransaction($class::getDb());
-            }, $this->_classes);
+                return Yii::createObject([
+                    'class' => XATransaction::class,
+                    'db' => $class::getDb()
+                ]);
+            }, TestModel::classes());
             foreach ($txs as $class => $tx) {
                 $tx->begin();
             }
-            foreach ($this->_classes as $class) {
+            foreach (TestModel::classes() as $class) {
                 $model = new $class;
                 $model->value = uniqid();
                 $model->save(false);
-                return $model;
             }
             $assertCount(1);
+            foreach ($txs as $class => $tx) {
+                $tx->end();
+                $tx->prepare();
+            }
             foreach ($txs as $class => $tx) {
                 $tx->$finalize();
             }
             $assertCount($finalize == 'commit' ? 1 : 0);
         }
+
     }
 
-    private $_classes = [
-        TestModel::class => TestModel::class,
-        OtherModel::class => OtherModel::class
-    ];
+    public function testManager() {
+        foreach (['commit', 'rollback'] as $finalize) {
+            $txs = array_map(function ($class) {
+                return Yii::createObject([
+                    'class' => XATransaction::class,
+                    'db' => $class::getDb()
+                ]);
+            }, TestModel::classes());
+            $manager = Yii::$app->get('transactionManager');
+            $id = Yii::$app->get('transactionManager')->getId();
+            foreach (TestModel::classes() as $class) {
+                $model = new $class;
+                $model->value = uniqid();
+                $model->save(false);
+            }
+            $manager->$finalize();
+            $this->assertNotEquals($id, $manager->id);
+            $this->assertEmpty(iterator_to_array($manager->transactions));
+        }
+    }
 }

@@ -1,6 +1,8 @@
 <?php
 
 
+use arls\xa\Bootstrap;
+
 defined('YII_DEBUG') or define('YII_DEBUG', true);
 defined('YII_ENV') or define('YII_ENV', 'test');
 defined('YII_APP_BASE_PATH') or define('YII_APP_BASE_PATH', __DIR__);
@@ -17,7 +19,7 @@ spl_autoload_register(function ($class) {
     }
     return false;
 });
-Yii::setAlias("@arls/xa",dirname(__DIR__).'/src');
+Yii::setAlias("@arls/xa", dirname(__DIR__) . '/src');
 
 $sql = <<<SQL
 CREATE TABLE IF NOT EXISTS `test` (
@@ -52,3 +54,5 @@ foreach ($classes as $class) {
     }
 }
 register_shutdown_function($deleteAll);
+
+(new Bootstrap())->bootstrap(Yii::$app);

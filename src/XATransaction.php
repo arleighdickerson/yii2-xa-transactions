@@ -4,40 +4,42 @@
 namespace arls\xa;
 
 use Yii;
+use yii\base\InvalidConfigException;
 use yii\base\Object;
 use yii\db\Connection;
+use yii\di\Instance;
 
 /**
  * Class XATransaction
  * @package arls\xa
  * @see https://dev.mysql.com/doc/refman/5.6/en/xa.html
  */
-class XATransaction extends Object {
+class XATransaction extends Object implements XABranchInterface {
     const STMT_BEGIN = "XA START :xid;";
     const STMT_END = "XA END :xid;";
     const STMT_PREPARE = "XA PREPARE :xid;";
     const STMT_COMMIT = "XA COMMIT :xid;";
     const STMT_ROLLBACK = "XA ROLLBACK :xid;";
 
-    const STATE_TERMINATED = 0;
-    const STATE_ACTIVE = 1;
-    const STATE_IDLE = 2;
-    const STATE_PREPARED = 3;
+    /**
+     * @var Connection the database connection that this transaction is associated with.
+     */
+    public $db;
 
-    public function __construct(Connection $db, array $config = []) {
-        $this->_db = $db;
+    private $_transactionManager;
+
+    public function __construct(TransactionManager $transactionManager, array $config = []) {
+        $this->_transactionManager = $transactionManager;
         parent::__construct($config);
     }
 
     public function init() {
         parent::init();
+        if ($this->db === null) {
+            throw new InvalidConfigException("db must not be null");
+        }
         $this->getTransactionManager()->registerTransaction($this);
     }
-
-    /**
-     * @var Connection the database connection that this transaction is associated with.
-     */
-    private $_db;
 
     /**
      * @var int $_state
@@ -46,22 +48,6 @@ class XATransaction extends Object {
 
     public function getState() {
         return $this->_state;
-    }
-
-    public function getIsTerminated() {
-        return $this->_state == self::STATE_TERMINATED;
-    }
-
-    public function getIsActive() {
-        return $this->_state == self::STATE_ACTIVE;
-    }
-
-    public function getIsIdle() {
-        return $this->_state == self::STATE_IDLE;
-    }
-
-    public function getIsPrepared() {
-        return $this->_state == self::STATE_PREPARED;
     }
 
     public function begin() {
@@ -74,38 +60,31 @@ class XATransaction extends Object {
         $this->_state = self::STATE_IDLE;
     }
 
-    public function prepare($end = false) {
-        if ($end && $this->getIsActive()) {
-            $this->end();
-        }
+    public function prepare() {
         $this->exec(self::STMT_PREPARE);
         $this->_state = self::STATE_PREPARED;
     }
 
-    public function commit($prepare = null) {
-        if ($prepare === null) {
-            $prepare = $this->getTransactionManager()->autoPrepare;
-        }
-        if ($prepare && $this->getState() < self::STATE_PREPARED) {
-            $this->prepare(true);
-        }
+    public function commit() {
         $this->exec(self::STMT_COMMIT);
         $this->_state = self::STATE_TERMINATED;
     }
 
-    public function rollBack($prepare = null) {
-        if ($prepare === null) {
-            $prepare = $this->getTransactionManager()->autoPrepare;
-        }
-        if ($prepare && $this->getState() < self::STATE_PREPARED) {
-            $this->prepare(true);
-        }
+    public function rollBack() {
         $this->exec(self::STMT_ROLLBACK);
         $this->_state = self::STATE_TERMINATED;
     }
 
+    public function getId() {
+        return $this->getTransactionManager()->getTransactionId($this);
+    }
+
     public function getDb() {
-        return $this->_db;
+        return Instance::ensure($this->db, Connection::class);
+    }
+
+    protected function getConnectionId() {
+        return $this->getTransactionManager()->getConnectionId($this->getDb());
     }
 
     protected function exec($sql) {
@@ -114,21 +93,10 @@ class XATransaction extends Object {
         return $this->getDb()->createCommand(str_replace(':xid', "'$gtrid','$bqual'", $sql))->execute();
     }
 
-    protected function getConnectionId() {
-        return $this->getTransactionManager()->getConnectionId($this->getDb());
-    }
-
-    protected function getId() {
-        return $this->getTransactionManager()->getTransactionId($this);
-    }
-
     /**
      * @return TransactionManager
      */
     protected function getTransactionManager() {
-        if (Yii::$app->get('transactionManager', false) === null) {
-            Yii::$app->set('transactionManager', TransactionManager::class);
-        }
-        return Yii::$app->get('transactionManager');
+        return $this->_transactionManager;
     }
 }

@@ -13,7 +13,7 @@ use Yii;
  * @property int $id
  * @property string $value
  */
-class OtherModel extends ActiveRecord {
+class OtherModel extends TestModel {
     public static function getDb() {
         return Yii::$app->get('db2');
     }

@@ -16,4 +16,12 @@ class TestModel extends ActiveRecord {
     public static function tableName() {
         return 'test';
     }
+
+    public static function classes() {
+        $classes = [
+            self::class,
+            TestModel::class
+        ];
+        return array_combine($classes, $classes);
+    }
 }

@@ -7,17 +7,7 @@ use yii\base\Component;
 use yii\base\Exception;
 use yii\db\Connection;
 
-class TransactionManager extends Component {
-    /**
-     * @var bool whether to prepare instead of commit when yii\db\Transaction::commit() is called
-     */
-    public $prepareOnCommit = false;
-
-    /**
-     * @var bool whether to automatically move transactions into the "prepared" state before committing or rolling back
-     */
-    public $autoPrepare = true;
-
+class TransactionManager extends Component implements XAInterface {
     /**
      * @var \SplObjectStorage
      */
@@ -37,48 +27,58 @@ class TransactionManager extends Component {
 
     public function init() {
         parent::init();
-        $this->_id = uniqid();
         $this->_transactions = new \SplObjectStorage();
+        $this->regenerateId();
     }
 
-    /**
-     * @return string
-     */
     public function getId() {
         return $this->_id;
     }
 
-    public function commitGlobal() {
-        $pending = $this->getPendingTransactions();
+    public function commit() {
+        foreach ($this->_transactions as $tx) {
+            if ($tx->state == XATransaction::STATE_ACTIVE) {
+                $tx->end();
+            }
+        }
         try {
-            foreach ($pending as $tx) {
-                $tx->prepare(true);
+            foreach ($this->_transactions as $tx) {
+                if ($tx->state == XATransaction::STATE_IDLE) {
+                    $tx->prepare();
+                }
             }
         } catch (\Exception $e) {
-            $this->rollbackGlobal();
+            $this->rollback();
             throw $e;
         }
-        foreach ($pending as $tx) {
-            $tx->commit();
+        foreach ($this->_transactions as $tx) {
+            if ($tx->state == XATransaction::STATE_PREPARED) {
+                $tx->commit();
+            }
         }
+        $this->terminateGlobalTransaction();
     }
 
-    public function rollbackGlobal() {
-        foreach ($this->getPendingTransactions() as $tx) {
-            $tx->rollback(true);
+    public function rollBack() {
+        foreach ($this->_transactions as $tx) {
+            if ($tx->state == XATransaction::STATE_ACTIVE) {
+                $tx->end();
+            }
         }
-        $this->_id = uniqid();
+        foreach ($this->_transactions as $tx) {
+            if ($tx->state > XATransaction::STATE_ACTIVE) {
+                $tx->rollback();
+            }
+        }
+        $this->terminateGlobalTransaction();
     }
 
     /**
-     * @return XATransaction[]
+     * @return \Generator
      */
-    protected function getPendingTransactions() {
-        foreach ($this->_transactions as $tx) {
-            /** @var XATransaction $tx */
-            if ($tx->getState() >= XATransaction::STATE_ACTIVE) {
-                yield $tx;
-            }
+    public function getTransactions() {
+        foreach ($this->_transactions as $transaction) {
+            yield $transaction;
         }
     }
 
@@ -90,6 +90,15 @@ class TransactionManager extends Component {
         if (!in_array($transaction->getDb(), $this->_connections)) {
             $this->_connections[] = $transaction->getDb();
         }
+    }
+
+    public function getCurrentTransaction(Connection $connection) {
+        foreach ($this->_transactions as $tx) {
+            if ($tx->state && $tx->getDb() == $connection) {
+                return $tx;
+            }
+        }
+        return null;
     }
 
     /**
@@ -118,5 +127,14 @@ class TransactionManager extends Component {
             $id++;
         }
         throw new Exception();
+    }
+
+    protected function regenerateId() {
+        return $this->_id = uniqid();
+    }
+
+    protected function terminateGlobalTransaction() {
+        $this->regenerateId();
+        $this->_transactions->removeAll($this->_transactions);
     }
 }
