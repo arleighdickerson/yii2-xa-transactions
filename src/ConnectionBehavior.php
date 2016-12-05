@@ -18,6 +18,9 @@ class ConnectionBehavior extends Behavior {
     private $_transactionManager;
     private $_operations;
 
+    /**
+     * @param Connection $owner
+     */
     public function attach($owner) {
         Instance::ensure($owner, Connection::class);
         parent::attach($owner);
@@ -28,6 +31,9 @@ class ConnectionBehavior extends Behavior {
         parent::__construct($config);
     }
 
+    /**
+     * @return ConnectionOperations
+     */
     public function getXa() {
         if ($this->_operations === null) {
             $this->_operations = Yii::createObject(ConnectionOperations::class, [

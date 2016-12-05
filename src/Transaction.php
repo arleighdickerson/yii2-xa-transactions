@@ -10,9 +10,10 @@ use yii\db\Connection;
 use yii\di\Instance;
 
 /**
- * Class XATransaction
+ * Class Transaction
  * @package arls\xa
  * @see https://dev.mysql.com/doc/refman/5.6/en/xa.html
+ * represents a branch of the global transaction being managed by the transaction manager
  */
 class Transaction extends Object implements BranchInterface {
     const STMT_BEGIN = "XA START :xid;";
@@ -26,6 +27,9 @@ class Transaction extends Object implements BranchInterface {
      */
     public $db;
 
+    /**
+     * @var TransactionManager
+     */
     private $_transactionManager;
 
     public function __construct(TransactionManager $transactionManager, array $config = []) {
@@ -42,10 +46,13 @@ class Transaction extends Object implements BranchInterface {
     }
 
     /**
-     * @var int $_state
+     * @var int
      */
     private $_state;
 
+    /**
+     * @return int
+     */
     public function getState() {
         return $this->_state;
     }
@@ -95,18 +102,31 @@ class Transaction extends Object implements BranchInterface {
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getId() {
         return $this->getTransactionManager()->getTransactionId($this);
     }
 
+    /**
+     * @return Connection
+     */
     public function getDb() {
         return Instance::ensure($this->db, Connection::class);
     }
 
+    /**
+     * @return int
+     */
     protected function getConnectionId() {
         return $this->getTransactionManager()->getConnectionId($this->getDb());
     }
 
+    /**
+     * @param $sql
+     * @return int
+     */
     protected function exec($sql) {
         $gtrid = $this->getTransactionManager()->getId();
         $bqual = $this->getId();

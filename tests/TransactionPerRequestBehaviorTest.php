@@ -7,6 +7,10 @@ use arls\xa\TransactionPerRequestBehavior;
 use models\TestModel;
 use yii\base\Controller;
 
+/**
+ * Class TransactionPerRequestBehaviorTest
+ * test arls\xa\TransactionPerRequestBehavior
+ */
 class TransactionPerRequestBehaviorTest extends PHPUnit_Framework_TestCase {
     public static function setUpBeforeClass() {
         parent::setUpBeforeClass();

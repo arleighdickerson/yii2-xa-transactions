@@ -1,4 +1,4 @@
-XA Transactions in yii2 
+XA Transactions in yii2
 see https://dev.mysql.com/doc/refman/5.6/en/xa.html
 
 to run tests:
@@ -10,3 +10,5 @@ vagrant ssh
 cd /app
 ./vendor/bin/phpunit
 ```
+
+moar docs to follow

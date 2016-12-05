@@ -1,5 +1,7 @@
 <?php
-
+/**
+ * Test Application Configuration
+ */
 return [
     'id' => 'xa-transactions-test',
     'basePath' => __DIR__,

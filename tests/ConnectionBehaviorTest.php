@@ -5,6 +5,10 @@ use arls\xa\ConnectionOperations;
 use arls\xa\Transaction;
 use models\TestModel;
 
+/**
+ * Class ConnectionBehaviorTest
+ * tests arls\xa\ConnectionBehavior
+ */
 class ConnectionBehaviorTest extends PHPUnit_Framework_TestCase {
     public static function setUpBeforeClass() {
         parent::setUpBeforeClass();

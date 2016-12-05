@@ -13,6 +13,16 @@ use yii\base\InvalidParamException;
 use yii\db\Connection;
 use Yii;
 
+/**
+ * Class TransactionPerRequestBehavior
+ * @package arls\xa
+ *
+ * Attach an instance to a database connection (after attaching arls\xa\ConnectionBehavior)
+ * and it will manage the transaction branch lifecycle such that each connection has one transaction per request.
+ * The transaction will be started when the connection is open.
+ * The transaction will be prepared and terminated (ie committed or rolled back)
+ * after the controller action has executed and before the response is sent.
+ */
 class TransactionPerRequestBehavior extends Behavior {
     private $_transactionManager;
 

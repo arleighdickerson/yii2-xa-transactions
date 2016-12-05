@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * Phpunit bootstrap file
+ *
+ * We configure some yii constants, register a new autoloader,
+ * bootstrap the application, and do some database setup.
+ */
 
 use arls\xa\Bootstrap;
 

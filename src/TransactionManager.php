@@ -28,10 +28,17 @@ class TransactionManager extends Component implements TransactionInterface {
         $this->regenerateId();
     }
 
+    /**
+     * @return string
+     */
     public function getId() {
         return $this->_id;
     }
 
+    /**
+     * @return static
+     * @throws \Exception
+     */
     public function commit() {
         foreach ($this->_transactions as $tx) {
             if ($tx->state == Transaction::STATE_ACTIVE) {
@@ -54,8 +61,12 @@ class TransactionManager extends Component implements TransactionInterface {
             }
         }
         $this->regenerateId();
+        return $this;
     }
 
+    /**
+     * @return static
+     */
     public function rollBack() {
         foreach ($this->_transactions as $tx) {
             if ($tx->state == Transaction::STATE_ACTIVE) {
@@ -68,6 +79,7 @@ class TransactionManager extends Component implements TransactionInterface {
             }
         }
         $this->regenerateId();
+        return $this;
     }
 
     /**
@@ -86,9 +98,14 @@ class TransactionManager extends Component implements TransactionInterface {
         $this->_transactions->attach($transaction);
     }
 
+    /**
+     * @param Connection $connection
+     * @return null|Transaction
+     */
     public function getCurrentTransaction(Connection $connection) {
         $current = null;
         foreach ($this->_transactions as $tx) {
+            /** @var Transaction $tx */
             if ($tx->db === $connection) {
                 $current = $tx;
             }
@@ -98,13 +115,13 @@ class TransactionManager extends Component implements TransactionInterface {
 
     /**
      * @param Connection $connection
-     * @return mixed
+     * @return int
      * @throws Exception
      */
     public function getConnectionId(Connection $connection) {
         $set = new SplObjectStorage();
         foreach ($this->_transactions as $tx) {
-            if ($connection == $tx->getDb()) {
+            if ($connection === $tx->getDb()) {
                 return $set->count();
             }
             $set->attach($tx);
@@ -128,6 +145,9 @@ class TransactionManager extends Component implements TransactionInterface {
         throw new Exception();
     }
 
+    /**
+     * @return string
+     */
     protected function regenerateId() {
         return $this->_id = uniqid();
     }

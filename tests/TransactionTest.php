@@ -7,6 +7,10 @@ use models\TestModel;
 use yii\base\Model;
 use yii\db\ActiveRecord;
 
+/**
+ * Class TransactionTest
+ * Tests arls\xa\Transaction
+ */
 class TransactionTest extends PHPUnit_Framework_TestCase {
 
     public function testSanity() {
