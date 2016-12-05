@@ -41,6 +41,8 @@ class Transaction extends Object implements BranchInterface {
         parent::init();
         if ($this->db === null) {
             throw new InvalidConfigException("db must not be null");
+        } elseif ($this->getDb()->getDriverName() != 'mysql') {
+            throw new InvalidConfigException("XA Transactions are only supported for mysql driver");
         }
         $this->getTransactionManager()->registerTransaction($this);
     }

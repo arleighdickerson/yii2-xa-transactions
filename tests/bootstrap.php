@@ -59,4 +59,3 @@ foreach ($classes as $class) {
     }
 }
 register_shutdown_function($deleteAll);
-
