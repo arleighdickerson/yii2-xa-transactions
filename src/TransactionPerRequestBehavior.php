@@ -73,8 +73,19 @@ class TransactionPerRequestBehavior extends Behavior {
         }
     }
 
-    protected function sinkApplicationListener($flag) {
-        $method = ($flag ? 'attach' : 'detach') . 'Behavior';
-        Yii::$app->$method('transactionPerRequest', self::class);
+    protected function sinkApplicationListener($shouldHaveListener) {
+        if($this->applicationHasListener() != $shouldHaveListener){
+            $addOrRemove = ($flag ? 'attach' : 'detach') . 'Behavior';
+            Yii::$app->$addOrRemove('transactionPerRequest', self::class);
+        }
+    }
+    
+    protected function applicationHasListener(){
+        foreach(Yii::$app->getBehaviors() as $behavior){
+            if($behavior instanceof TransactionPerRequestBehavior){
+                return true;
+            }
+            return false;
+        }
     }
 }
