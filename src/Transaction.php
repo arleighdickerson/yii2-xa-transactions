@@ -3,7 +3,6 @@
 
 namespace arls\xa;
 
-use Yii;
 use yii\base\InvalidConfigException;
 use yii\base\Object;
 use yii\db\Connection;

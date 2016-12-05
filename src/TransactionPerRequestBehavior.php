@@ -7,7 +7,6 @@ namespace arls\xa;
 use yii\base\Application;
 use yii\base\Behavior;
 use yii\base\Controller;
-use yii\base\Event;
 use yii\base\InvalidConfigException;
 use yii\base\InvalidParamException;
 use yii\db\Connection;
@@ -74,18 +73,18 @@ class TransactionPerRequestBehavior extends Behavior {
     }
 
     protected function sinkApplicationListener($shouldHaveListener) {
-        if($this->applicationHasListener() != $shouldHaveListener){
+        if ($this->applicationHasListener() != $shouldHaveListener) {
             $addOrRemove = ($shouldHaveListener ? 'attach' : 'detach') . 'Behavior';
             Yii::$app->$addOrRemove('transactionPerRequest', self::class);
         }
     }
-    
-    protected function applicationHasListener(){
-        foreach(Yii::$app->getBehaviors() as $behavior){
-            if($behavior instanceof TransactionPerRequestBehavior){
+
+    protected function applicationHasListener() {
+        foreach (Yii::$app->getBehaviors() as $behavior) {
+            if ($behavior instanceof TransactionPerRequestBehavior) {
                 return true;
             }
-            return false;
         }
+        return false;
     }
 }
