@@ -87,12 +87,13 @@ class TransactionManager extends Component implements TransactionInterface {
     }
 
     public function getCurrentTransaction(Connection $connection) {
+        $current = null;
         foreach ($this->_transactions as $tx) {
-            if ($tx->state && $tx->db === $connection) {
-                return $tx;
+            if ($tx->db === $connection) {
+                $current = $tx;
             }
         }
-        return null;
+        return $current;
     }
 
     /**

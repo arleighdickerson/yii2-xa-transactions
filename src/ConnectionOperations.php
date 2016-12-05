@@ -33,10 +33,10 @@ class ConnectionOperations extends Object {
 
     public function getTransaction($beginIfNone = false) {
         $xa = $this->_transactionManager->getCurrentTransaction($this->_connection);
-        if ($xa === null && $beginIfNone) {
+        if (($xa === null || !$xa->state) && $beginIfNone) {
             $xa = $this->beginTransaction();
         }
-        return $xa !== null && $xa->getState() ? $xa : null;
+        return $xa;
     }
 
 }

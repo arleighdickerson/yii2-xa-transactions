@@ -33,7 +33,7 @@ class ConnectionBehaviorTest extends PHPUnit_Framework_TestCase {
             $this->assertEquals(Transaction::STATE_ACTIVE, $tx->state);
             $tx->end();
             $tx->rollback();
-            $this->assertNull($conn->xa->getTransaction());
+            $this->assertEquals(Transaction::STATE_TERMINATED,$conn->xa->getTransaction()->getState());
             $this->assertNotNull($conn->xa->getTransaction(true));
             $conn->xa->transaction->end()->rollback();
         }

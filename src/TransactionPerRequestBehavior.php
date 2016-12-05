@@ -4,11 +4,14 @@
 namespace arls\xa;
 
 
+use yii\base\Application;
 use yii\base\Behavior;
 use yii\base\Controller;
+use yii\base\Event;
 use yii\base\InvalidConfigException;
+use yii\base\InvalidParamException;
 use yii\db\Connection;
-use yii\di\Instance;
+use Yii;
 
 class TransactionPerRequestBehavior extends Behavior {
     private $_transactionManager;
@@ -20,16 +23,24 @@ class TransactionPerRequestBehavior extends Behavior {
 
     public function events() {
         return [
-            Connection::EVENT_AFTER_OPEN => [$this->owner->xa, 'beginTransaction'],
-            Controller::EVENT_AFTER_ACTION => [$this->_transactionManager, 'commit']
+            Connection::EVENT_AFTER_OPEN => $this->owner instanceof Application
+                ? null
+                : [$this->owner->xa, 'beginTransaction'],
+            Controller::EVENT_AFTER_ACTION => [$this->_transactionManager, 'commit'],
         ];
     }
 
+    private static $_attachedInstanceCount = 0;
+
     public function attach($owner) {
+        parent::attach($owner);
         if ($owner instanceof Connection) {
             foreach ($owner->getBehaviors() as $behavior) {
                 if ($behavior instanceof ConnectionBehavior) {
-                    parent::attach($owner);
+                    if (self::$_attachedInstanceCount == 0) {
+                        $this->sinkApplicationListener(true);
+                    }
+                    self::$_attachedInstanceCount++;
                     return;
                 }
             }
@@ -38,5 +49,22 @@ class TransactionPerRequestBehavior extends Behavior {
                 . "to use arls\\xa\\TransactionPerRequestBehavior"
             );
         }
+        if ($owner instanceof Application) {
+            return;
+        }
+        throw new InvalidParamException("TransactionPerRequestBehavior can only be attached to an applications or connections");
+    }
+
+    public function detach() {
+        parent::detach();
+        self::$_attachedInstanceCount--;
+        if (self::$_attachedInstanceCount == 0) {
+            $this->sinkApplicationListener(false);
+        }
+    }
+
+    protected function sinkApplicationListener($flag) {
+        $method = ($flag ? 'attach' : 'detach') . 'Behavior';
+        Yii::$app->$method('transactionPerRequest', self::class);
     }
 }

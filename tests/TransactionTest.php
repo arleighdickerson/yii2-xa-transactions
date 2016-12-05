@@ -98,12 +98,12 @@ class TransactionTest extends PHPUnit_Framework_TestCase {
             $manager->$finalize();
             $this->assertNotEquals($id, $manager->id);
             $live = 0;
-            foreach($manager->transactions as $tx){
-                if($tx->state){
+            foreach ($manager->transactions as $tx) {
+                if ($tx->state) {
                     $live++;
                 }
             }
-            $this->assertEquals(0,$live);
+            $this->assertEquals(0, $live);
         }
     }
 }

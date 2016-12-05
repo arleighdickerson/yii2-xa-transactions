@@ -21,5 +21,5 @@ if [ -a /var/run/mysqld/mysqld/mysqld2.sock ]; then
 echo 'mysql server on port 3337 already running';
 else
     echo 'starting mysql server on port 3337';
-    sudo nohup mysqld_safe --defaults-file=/etc/mysql2/my.cnf --skip-grant-tables &
+    mysqld_safe --defaults-file=/etc/mysql2/my.cnf --skip-grant-tables > /dev/null 2>&1 &
 fi
