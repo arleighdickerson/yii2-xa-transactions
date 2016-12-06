@@ -43,24 +43,24 @@ class TransactionManager extends Component implements TransactionInterface {
      * @throws \Exception
      */
     public function commit() {
-        foreach ($this->_transactions as $tx) {
-            if ($tx->state == Transaction::STATE_ACTIVE) {
-                $tx->end();
+        foreach ($this->_transactions as $transaction) {
+            if ($transaction->state == Transaction::STATE_ACTIVE) {
+                $transaction->end();
             }
         }
         try {
-            foreach ($this->_transactions as $tx) {
-                if ($tx->state == Transaction::STATE_IDLE) {
-                    $tx->prepare();
+            foreach ($this->_transactions as $transaction) {
+                if ($transaction->state == Transaction::STATE_IDLE) {
+                    $transaction->prepare();
                 }
             }
         } catch (\Exception $e) {
             $this->rollback();
             throw $e;
         }
-        foreach ($this->_transactions as $tx) {
-            if ($tx->state == Transaction::STATE_PREPARED) {
-                $tx->commit();
+        foreach ($this->_transactions as $transaction) {
+            if ($transaction->state == Transaction::STATE_PREPARED) {
+                $transaction->commit();
             }
         }
         $this->_gtrid = $this->regenerateId();
@@ -71,14 +71,14 @@ class TransactionManager extends Component implements TransactionInterface {
      * @return static
      */
     public function rollBack() {
-        foreach ($this->_transactions as $tx) {
-            if ($tx->state == Transaction::STATE_ACTIVE) {
-                $tx->end();
+        foreach ($this->_transactions as $transaction) {
+            if ($transaction->state == Transaction::STATE_ACTIVE) {
+                $transaction->end();
             }
         }
-        foreach ($this->_transactions as $tx) {
-            if ($tx->state > Transaction::STATE_ACTIVE) {
-                $tx->rollback();
+        foreach ($this->_transactions as $transaction) {
+            if ($transaction->state > Transaction::STATE_ACTIVE) {
+                $transaction->rollback();
             }
         }
         $this->_gtrid = $this->regenerateId();
@@ -98,10 +98,10 @@ class TransactionManager extends Component implements TransactionInterface {
      */
     public function getCurrentTransaction(Connection $connection) {
         $current = null;
-        foreach ($this->_transactions as $tx) {
-            /** @var Transaction $tx */
-            if ($tx->db === $connection) {
-                $current = $tx;
+        foreach ($this->_transactions as $transaction) {
+            /** @var Transaction $transaction */
+            if ($transaction->db === $connection) {
+                $current = $transaction;
             }
         }
         return $current;
@@ -114,10 +114,11 @@ class TransactionManager extends Component implements TransactionInterface {
      */
     public function getBranchQualifier(Transaction $branch) {
         $id = 0;
-        foreach ($this->_transactions as $tx) {
-            if ($tx->gtrid == $branch->gtrid) {
-                if ($tx->db === $branch->db) {
-                    if ($tx === $branch) {
+        foreach ($this->_transactions as $transaction) {
+            /** @var Transaction $transaction */
+            if ($transaction->gtrid == $branch->gtrid) {
+                if ($transaction->db === $branch->db) {
+                    if ($transaction === $branch) {
                         return $id;
                     }
                     $id++;

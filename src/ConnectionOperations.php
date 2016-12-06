@@ -41,15 +41,15 @@ class ConnectionOperations extends Object {
      */
     public function beginTransaction() {
         Yii::trace('Begin xa transaction', __METHOD__);
-        $tx = $this->_transactionManager->getCurrentTransaction($this->_connection);
-        if ($tx === null) {
-            $tx = Yii::createObject([
+        $transaction = $this->getCurrentTransaction();
+        if ($transaction === null) {
+            $transaction = Yii::createObject([
                 'class' => Transaction::class,
                 'db' => $this->_connection
             ]);
         }
-        $tx->begin();
-        return $tx;
+        $transaction->begin();
+        return $transaction;
     }
 
     /**
@@ -58,10 +58,13 @@ class ConnectionOperations extends Object {
      * @return Transaction|null
      */
     public function getTransaction($beginIfNone = false) {
-        $tx = $this->_transactionManager->getCurrentTransaction($this->_connection);
-        if (($tx === null || !$tx->state) && $beginIfNone) {
-            $tx = $this->beginTransaction();
-        }
-        return $tx;
+        $transaction = $this->getCurrentTransaction();
+        return ($transaction === null || !$transaction->state) && $beginIfNone
+            ? $this->beginTransaction()
+            : $transaction;
+    }
+
+    protected function getCurrentTransaction() {
+        return $this->_transactionManager->getCurrentTransaction($this->_connection);
     }
 }

@@ -10,12 +10,12 @@ use yii\di\Instance;
 
 /**
  * Class Transaction
- * @package arls\xa
+ * @property string $gtrid
+ *      the global transaction id. This property is read-only.
+ * @property string $bqual
+ *      the transaction's branch qualifier. This property is read-only.
  * @see https://dev.mysql.com/doc/refman/5.6/en/xa.html
  * represents a branch of the global transaction being managed by the transaction manager
- *
- * @property string $gtrid the global transaction id. This property is read-only.
- * @property string $bqual this transaction's branch qualifier. This property is read-only.
  */
 class Transaction extends Object implements BranchInterface {
     const STMT_BEGIN = "XA START :xid;";

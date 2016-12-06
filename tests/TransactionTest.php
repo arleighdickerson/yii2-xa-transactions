@@ -88,10 +88,11 @@ class TransactionTest extends PHPUnit_Framework_TestCase {
     public function testManager() {
         foreach (['commit', 'rollback'] as $finalize) {
             $txs = array_map(function ($class) {
-                return Yii::createObject([
+                $tx = Yii::createObject([
                     'class' => Transaction::class,
                     'db' => $class::getDb()
                 ]);
+                $tx->begin();
             }, TestModel::classes());
             $manager = Yii::$container->get(TransactionManager::class);
             $id = $manager->getGtrid();

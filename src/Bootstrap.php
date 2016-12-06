@@ -6,6 +6,7 @@ namespace arls\xa;
 
 use yii\base\BootstrapInterface;
 use Yii;
+use yii\db\mysql\Schema;
 
 
 /**
@@ -20,5 +21,10 @@ class Bootstrap implements BootstrapInterface {
         if (!Yii::$container->hasSingleton(TransactionManager::class)) {
             Yii::$container->setSingleton(TransactionManager::class);
         }
+        Yii::$container->set(Schema::class, function ($container, $params, $config) {
+            $schema = new Schema($config);
+            $schema->exceptionMap['global transaction'] = TransactionException::class;
+            return $schema;
+        });
     }
 }
