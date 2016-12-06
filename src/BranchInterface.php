@@ -1,6 +1,7 @@
 <?php
 
 namespace arls\xa;
+
 /**
  * Interface BranchInterface
  * @package arls\xa

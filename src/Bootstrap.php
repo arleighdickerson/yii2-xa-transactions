@@ -22,6 +22,7 @@ class Bootstrap implements BootstrapInterface {
             Yii::$container->setSingleton(TransactionManager::class);
         }
         Yii::$container->set(Schema::class, function ($container, $params, $config) {
+            //add transaction exceptions to the MySQL schema exception map
             $schema = new Schema($config);
             $schema->exceptionMap['global transaction'] = TransactionException::class;
             return $schema;

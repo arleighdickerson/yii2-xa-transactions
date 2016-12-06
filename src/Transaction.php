@@ -10,10 +10,8 @@ use yii\di\Instance;
 
 /**
  * Class Transaction
- * @property string $gtrid
- *      the global transaction id. This property is read-only.
- * @property string $bqual
- *      the transaction's branch qualifier. This property is read-only.
+ * @property string $gtrid the global transaction id. This property is read-only.
+ * @property string $bqual the transaction's branch qualifier. This property is read-only.
  * @see https://dev.mysql.com/doc/refman/5.6/en/xa.html
  * represents a branch of the global transaction being managed by the transaction manager
  */
