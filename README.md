@@ -2,7 +2,23 @@ Yii2 XA Transactions
 ===================
 Useful for composing multiple operations on multiple database connections into a single transactional unit.
 Requires MySQL, see https://dev.mysql.com/doc/refman/5.6/en/xa.html
-
+Installation
+===================
+Update your composer.json file
+```JSON
+{
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/arleighdickerson/yii2-xa-transactions"
+        }
+    ],
+    "require": {
+        "arls/xa": "dev-master"
+    }
+}
+```
+and do a composer update.
 Usage
 ===================
 Attach ConnectionBehavior to a Connection instance. Here, we'll use the DI Container to attach it to all connection instances running MySQL
@@ -67,11 +83,11 @@ use yii\db\Connection;
 use yii\base\Event;
 use yii\base\Controller;
 
+//begin an XA Transaction when a connection is opened
 Event::on(Connection::class, Connection::EVENT_AFTER_OPEN, function (Event $event) {
     /** @var Connection $db */
     $db = $event->sender;
     if ($db->hasProperty('xa')) {
-        //begin an XA Transaction when the connection is opened
         $db->xa->beginTransaction();
     }
 });
