@@ -29,7 +29,6 @@ and to get reference to the active transaction (branch) for that connection, do
 ```PHP
 Yii::$app->db->xa->transaction;
 ```
-. 
 Here, we can go through the transaction lifecycle on multiple connections
 ```PHP
 /** @var yii\db\Connection[] $connection */
