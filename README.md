@@ -78,7 +78,7 @@ foreach ($connections as $db) {
     $db->xa->transaction->commit();
 }
 ```
-However, managing transaction branches by hand like this is tedious and error prone. We can configure the application to use a transaction manager to manage one global transaction per request and via Yii's component event hooks we can make the process transparent to client code.
+However, managing transaction branches by hand like this is tedious and error prone. We can configure the application to use a transaction manager to manage one global transaction per request. Using Yii's event hooks we can also make the process transparent to client code.
 ```PHP
 use yii\db\Connection;
 use yii\base\Event;
