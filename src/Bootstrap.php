@@ -16,10 +16,11 @@ use Yii;
  * Also registers the transaction manager as a container singleton for constructor injection
  */
 class Bootstrap implements BootstrapInterface {
+    const COMPONENT_ID = 'transactionManager';
+
     public function bootstrap($app) {
-        if ($app->get('transactionManager', false) === null) {
-            $app->set('transactionManager', TransactionManager::class);
+        if (!Yii::$container->hasSingleton(TransactionManager::class)) {
+            Yii::$container->setSingleton(TransactionManager::class);
         }
-        Yii::$container->setSingleton(TransactionManager::class, $app->get('transactionManager'));
     }
 }

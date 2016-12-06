@@ -14,6 +14,11 @@ interface BranchInterface extends TransactionInterface {
     const STATE_PREPARED = 3;
 
     /**
+     * @return int the branch qualifier of this transaction
+     */
+    public function getBqual();
+
+    /**
      * @return static
      * begins the transaction, moving it into the active state
      */

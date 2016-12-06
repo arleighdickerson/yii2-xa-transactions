@@ -2,6 +2,7 @@
 
 
 use arls\xa\Transaction;
+use arls\xa\TransactionManager;
 use models\OtherModel;
 use models\TestModel;
 use yii\base\Model;
@@ -92,15 +93,15 @@ class TransactionTest extends PHPUnit_Framework_TestCase {
                     'db' => $class::getDb()
                 ]);
             }, TestModel::classes());
-            $manager = Yii::$app->get('transactionManager');
-            $id = Yii::$app->get('transactionManager')->getId();
+            $manager = Yii::$container->get(TransactionManager::class);
+            $id = $manager->getGtrid();
             foreach (TestModel::classes() as $class) {
                 $model = new $class;
                 $model->value = uniqid();
                 $model->save(false);
             }
             $manager->$finalize();
-            $this->assertNotEquals($id, $manager->id);
+            $this->assertNotEquals($id, $manager->getGtrid());
             $live = 0;
             foreach ($manager->transactions as $tx) {
                 if ($tx->state) {

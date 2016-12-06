@@ -10,7 +10,7 @@ use yii\db\Connection;
 use yii\di\Instance;
 
 /**
- * Class XAConnectionBehavior
+ * Class ConnectionBehavior
  * @package arls\xa
  * @property Connection $owner
  */
