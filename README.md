@@ -24,7 +24,8 @@ Usage
 Attach ConnectionBehavior to a Connection instance. Here, we'll use the DI Container to attach it to all connection instances running MySQL
 ```PHP
 //in the bootstrap
-Yii::$container->set('yii\db\Connection', function ($container, $params, $config) {
+use yii\db\Connection;
+Yii::$container->set(Connection::class, function ($container, $params, $config) {
     $conn = new Connection($config);
     if ($conn->getDriverName() == 'mysql') {
         $conn->attachBehavior('xa', 'arls\xa\ConnectionBehavior');
