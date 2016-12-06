@@ -75,7 +75,7 @@ Event::on(Connection::class, Connection::EVENT_AFTER_OPEN, function (Event $even
     }
 });
 
-Yii::$app->on('afterAction', function () {
+Yii::$app->on(Controller::EVENT_AFTER_ACTION, function () {
     $transactionManager = Yii::$container->get('arls\xa\TransactionManager');
     $transactionManager->commit();
 });
