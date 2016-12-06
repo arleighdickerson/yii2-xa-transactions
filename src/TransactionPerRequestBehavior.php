@@ -23,8 +23,16 @@ use Yii;
  * after the controller action has executed and before the response is sent.
  */
 class TransactionPerRequestBehavior extends Behavior {
+    /**
+     * @var TransactionManager
+     */
     private $_transactionManager;
 
+    /**
+     * TransactionPerRequestBehavior constructor.
+     * @param TransactionManager $transactionManager
+     * @param array $config
+     */
     public function __construct(TransactionManager $transactionManager, array $config = []) {
         $this->_transactionManager = $transactionManager;
         parent::__construct($config);
@@ -39,17 +47,14 @@ class TransactionPerRequestBehavior extends Behavior {
         ];
     }
 
-    private static $_attachedInstanceCount = 0;
-
     public function attach($owner) {
         parent::attach($owner);
+        if ($owner instanceof Application) {
+            return;
+        }
         if ($owner instanceof Connection) {
             foreach ($owner->getBehaviors() as $behavior) {
                 if ($behavior instanceof ConnectionBehavior) {
-                    if (self::$_attachedInstanceCount == 0) {
-                        $this->sinkApplicationListener(true);
-                    }
-                    self::$_attachedInstanceCount++;
                     return;
                 }
             }
@@ -58,33 +63,6 @@ class TransactionPerRequestBehavior extends Behavior {
                 . "to use arls\\xa\\TransactionPerRequestBehavior"
             );
         }
-        if ($owner instanceof Application) {
-            return;
-        }
         throw new InvalidParamException("TransactionPerRequestBehavior can only be attached to an applications or connections");
-    }
-
-    public function detach() {
-        parent::detach();
-        self::$_attachedInstanceCount--;
-        if (self::$_attachedInstanceCount == 0) {
-            $this->sinkApplicationListener(false);
-        }
-    }
-
-    protected function sinkApplicationListener($shouldHaveListener) {
-        if ($this->applicationHasListener() != $shouldHaveListener) {
-            $addOrRemove = ($shouldHaveListener ? 'attach' : 'detach') . 'Behavior';
-            Yii::$app->$addOrRemove('transactionPerRequest', self::class);
-        }
-    }
-
-    protected function applicationHasListener() {
-        foreach (Yii::$app->getBehaviors() as $behavior) {
-            if ($behavior instanceof TransactionPerRequestBehavior) {
-                return true;
-            }
-        }
-        return false;
     }
 }

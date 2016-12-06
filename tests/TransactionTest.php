@@ -93,14 +93,14 @@ class TransactionTest extends PHPUnit_Framework_TestCase {
                 ]);
             }, TestModel::classes());
             $manager = Yii::$app->get('transactionManager');
-            $id = Yii::$app->get('transactionManager')->getId();
+            $id = $manager->getGtrid();
             foreach (TestModel::classes() as $class) {
                 $model = new $class;
                 $model->value = uniqid();
                 $model->save(false);
             }
             $manager->$finalize();
-            $this->assertNotEquals($id, $manager->id);
+            $this->assertNotEquals($id, $manager->getGtrid());
             $live = 0;
             foreach ($manager->transactions as $tx) {
                 if ($tx->state) {

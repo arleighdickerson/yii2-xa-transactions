@@ -22,6 +22,12 @@ class ConnectionOperations extends Object {
      */
     private $_connection;
 
+    /**
+     * ConnectionOperations constructor.
+     * @param TransactionManager $transactionManager
+     * @param Connection $connection
+     * @param array $config
+     */
     public function __construct(TransactionManager $transactionManager, Connection $connection, array $config = []) {
         $this->_transactionManager = $transactionManager;
         $this->_connection = $connection;

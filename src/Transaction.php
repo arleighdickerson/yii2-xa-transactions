@@ -13,6 +13,9 @@ use yii\di\Instance;
  * @package arls\xa
  * @see https://dev.mysql.com/doc/refman/5.6/en/xa.html
  * represents a branch of the global transaction being managed by the transaction manager
+ *
+ * @property string $gtrid the global transaction id. This property is read-only.
+ * @property string $bqual this transaction's branch qualifier. This property is read-only.
  */
 class Transaction extends Object implements BranchInterface {
     const STMT_BEGIN = "XA START :xid;";
@@ -31,6 +34,11 @@ class Transaction extends Object implements BranchInterface {
      */
     private $_transactionManager;
 
+    /**
+     * Transaction constructor.
+     * @param TransactionManager $transactionManager
+     * @param array $config
+     */
     public function __construct(TransactionManager $transactionManager, array $config = []) {
         $this->_transactionManager = $transactionManager;
         parent::__construct($config);
@@ -43,7 +51,27 @@ class Transaction extends Object implements BranchInterface {
         } elseif ($this->getDb()->getDriverName() != 'mysql') {
             throw new InvalidConfigException("XA Transactions are only supported for mysql driver");
         }
-        $this->getTransactionManager()->registerTransaction($this);
+    }
+
+    /**
+     * @var string
+     */
+    private $_gtrid;
+
+    /**
+     * @inheritdoc
+     * @see TransactionInterface::getGtrid()
+     */
+    public function getGtrid() {
+        return $this->_gtrid;
+    }
+
+    /**
+     * @inheritdoc
+     * @see BranchInterface::getBqual()
+     */
+    public function getBqual() {
+        return $this->getTransactionManager()->getBranchQualifier($this);
     }
 
     /**
@@ -64,6 +92,7 @@ class Transaction extends Object implements BranchInterface {
      * @see BranchInterface::begin()
      */
     public function begin() {
+        $this->registerWithTransactionManager();
         $this->exec(self::STMT_BEGIN);
         $this->_state = self::STATE_ACTIVE;
         return $this;
@@ -110,13 +139,6 @@ class Transaction extends Object implements BranchInterface {
     }
 
     /**
-     * @inheritdoc
-     */
-    public function getId() {
-        return $this->getTransactionManager()->getTransactionId($this);
-    }
-
-    /**
      * @return Connection
      */
     public function getDb() {
@@ -124,20 +146,22 @@ class Transaction extends Object implements BranchInterface {
     }
 
     /**
+     * @param $sql
      * @return int
+     * replace :xid with this transaction's xid and execute the sql
      */
-    protected function getConnectionId() {
-        return $this->getTransactionManager()->getConnectionId($this->getDb());
+    protected function exec($sql) {
+        return $this->getDb()->createCommand(
+            str_replace(':xid', "'{$this->getGtrid()}','{$this->getBqual()}'", $sql)
+        )->execute();
     }
 
     /**
-     * @param $sql
-     * @return int
+     * register this branch with the transaction manager and set the gtrid
      */
-    protected function exec($sql) {
-        $gtrid = $this->getTransactionManager()->getId();
-        $bqual = $this->getId();
-        return $this->getDb()->createCommand(str_replace(':xid', "'$gtrid','$bqual'", $sql))->execute();
+    protected function registerWithTransactionManager() {
+        $this->_gtrid = $this->getTransactionManager()->getGtrid();
+        $this->getTransactionManager()->registerTransaction($this);
     }
 
     /**

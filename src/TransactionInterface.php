@@ -13,7 +13,7 @@ interface TransactionInterface {
     /**
      * @return string a globally unique transaction id
      */
-    public function getId();
+    public function getGtrid();
 
     /**
      * @return static

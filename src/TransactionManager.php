@@ -20,19 +20,22 @@ class TransactionManager extends Component implements TransactionInterface {
      * all global transaction ids for transactions belonging to this manager
      * will start with this value
      */
-    private $_id;
+    private $_gtrid;
 
+    /**
+     * Initializes the transaction and generates a gtrid
+     */
     public function init() {
         parent::init();
         $this->_transactions = new SplObjectStorage();
-        $this->regenerateId();
+        $this->_gtrid = $this->regenerateId();
     }
 
     /**
      * @return string
      */
-    public function getId() {
-        return $this->_id;
+    public function getGtrid() {
+        return $this->_gtrid;
     }
 
     /**
@@ -60,7 +63,7 @@ class TransactionManager extends Component implements TransactionInterface {
                 $tx->commit();
             }
         }
-        $this->regenerateId();
+        $this->_gtrid = $this->regenerateId();
         return $this;
     }
 
@@ -78,7 +81,7 @@ class TransactionManager extends Component implements TransactionInterface {
                 $tx->rollback();
             }
         }
-        $this->regenerateId();
+        $this->_gtrid = $this->regenerateId();
         return $this;
     }
 
@@ -105,35 +108,23 @@ class TransactionManager extends Component implements TransactionInterface {
     }
 
     /**
-     * @param Connection $connection
+     * @param Transaction $branch
      * @return int
      * @throws Exception
      */
-    public function getConnectionId(Connection $connection) {
-        $set = new SplObjectStorage();
-        foreach ($this->_transactions as $tx) {
-            if ($connection === $tx->getDb()) {
-                return $set->count();
-            }
-            $set->attach($tx);
-        }
-        throw new Exception("Connection not found");
-    }
-
-    /**
-     * @param Transaction $transaction
-     * @return mixed
-     * @throws Exception
-     */
-    public function getTransactionId(Transaction $transaction) {
+    public function getBranchQualifier(Transaction $branch) {
         $id = 0;
         foreach ($this->_transactions as $tx) {
-            if ($tx === $transaction) {
-                return $id;
+            if ($tx->gtrid == $branch->gtrid) {
+                if ($tx->db === $branch->db) {
+                    if ($tx === $branch) {
+                        return $id;
+                    }
+                    $id++;
+                }
             }
-            $id++;
         }
-        throw new Exception();
+        throw new Exception("Branch was not found in global transaction");
     }
 
     /**
@@ -147,6 +138,6 @@ class TransactionManager extends Component implements TransactionInterface {
      * @return string
      */
     protected function regenerateId() {
-        return $this->_id = uniqid();
+        return uniqid();
     }
 }
