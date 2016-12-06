@@ -71,13 +71,19 @@ Event::on(Connection::class, Connection::EVENT_AFTER_OPEN, function (Event $even
     /** @var Connection $db */
     $db = $event->sender;
     if ($db->hasProperty('xa')) {
+        //begin an XA Transaction when the connection is opened
         $db->xa->beginTransaction();
     }
 });
 
+//commit all XA transactions after the action executes
 Yii::$app->on(Controller::EVENT_AFTER_ACTION, function () {
     $transactionManager = Yii::$container->get('arls\xa\TransactionManager');
-    $transactionManager->commit();
+    //prepare and commit all running XA transactions
+    //if an exception is triggered, all running XA transactions will be rolled back
+    //therefore, all transactions succeed or all transactions fail
+    //all within the context of one global transaction
+    $transactionManager->commit(); 
 });
 
 ```
