@@ -18,12 +18,6 @@ use yii\di\Instance;
  * represents a branch of the global transaction being managed by the transaction manager
  */
 class Transaction extends Object implements BranchInterface {
-    const STMT_BEGIN = "XA START :xid;";
-    const STMT_END = "XA END :xid;";
-    const STMT_PREPARE = "XA PREPARE :xid;";
-    const STMT_COMMIT = "XA COMMIT :xid;";
-    const STMT_ROLLBACK = "XA ROLLBACK :xid;";
-
     /**
      * @var Connection the database connection that this transaction is associated with.
      */
@@ -93,8 +87,9 @@ class Transaction extends Object implements BranchInterface {
      */
     public function begin() {
         $this->registerWithTransactionManager();
-        $this->exec(self::STMT_BEGIN);
+        $this->execute("BEGIN");
         $this->_state = self::STATE_ACTIVE;
+        $this->db->trigger(Connection::EVENT_BEGIN_TRANSACTION);
         return $this;
     }
 
@@ -103,7 +98,7 @@ class Transaction extends Object implements BranchInterface {
      * @see BranchInterface::end()
      */
     public function end() {
-        $this->exec(self::STMT_END);
+        $this->execute("END");
         $this->_state = self::STATE_IDLE;
         return $this;
     }
@@ -113,7 +108,7 @@ class Transaction extends Object implements BranchInterface {
      * @see BranchInterface::prepare()
      */
     public function prepare() {
-        $this->exec(self::STMT_PREPARE);
+        $this->execute("PREPARE");
         $this->_state = self::STATE_PREPARED;
         return $this;
     }
@@ -123,8 +118,9 @@ class Transaction extends Object implements BranchInterface {
      * @see TransactionInterface::commit()
      */
     public function commit() {
-        $this->exec(self::STMT_COMMIT);
+        $this->execute("COMMIT");
         $this->_state = self::STATE_TERMINATED;
+        $this->db->trigger(Connection::EVENT_COMMIT_TRANSACTION);
         return $this;
     }
 
@@ -133,8 +129,9 @@ class Transaction extends Object implements BranchInterface {
      * @see TransactionInterface::rollBack()
      */
     public function rollBack() {
-        $this->exec(self::STMT_ROLLBACK);
+        $this->execute("ROLLBACK");
         $this->_state = self::STATE_TERMINATED;
+        $this->db->trigger(Connection::EVENT_ROLLBACK_TRANSACTION);
         return $this;
     }
 
@@ -145,15 +142,11 @@ class Transaction extends Object implements BranchInterface {
         return Instance::ensure($this->db, Connection::class);
     }
 
-    /**
-     * @param $sql
-     * @return int
-     * replace :xid with this transaction's xid and execute the sql
-     */
-    protected function exec($sql) {
-        return $this->getDb()->createCommand(
-            str_replace(':xid', "'{$this->getGtrid()}','{$this->getBqual()}'", $sql)
-        )->execute();
+    protected function execute($keyword) {
+        $xid = "'{$this->getGtrid()}','{$this->getBqual()}'";
+        return $this->getDb()
+            ->createCommand("XA $keyword $xid;")
+            ->execute();
     }
 
     /**
