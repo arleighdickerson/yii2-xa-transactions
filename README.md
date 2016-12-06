@@ -7,6 +7,7 @@ Usage
 ===================
 Attach ConnectionBehavior to a Connection instance. Here, we'll use the DI Container to attach it to all connection instances running MySQL
 ```PHP
+//in the bootstrap
 Yii::$container->set('yii\db\Connection', function ($container, $params, $config) {
     $conn = new Connection($config);
     if ($conn->getDriverName() == 'mysql') {
@@ -61,7 +62,25 @@ foreach ($connections as $db) {
 }
 ```
 However, managing transaction branches by hand like this is tedious and error prone. We can configure the application to use a transaction manager to manage one global transaction per request and via Yii's component event hooks we can make the process transparent to client code.
+```PHP
+use yii\db\Connection;
+use yii\base\Event;
+use yii\base\Controller;
 
+Event::on(Connection::class, Connection::EVENT_AFTER_OPEN, function (Event $event) {
+    /** @var Connection $db */
+    $db = $event->sender;
+    if ($db->hasProperty('xa')) {
+        $db->xa->beginTransaction();
+    }
+});
+
+Yii::$app->on('afterAction', function () {
+    $transactionManager = Yii::$container->get('arls\xa\TransactionManager');
+    $transactionManager->commit();
+});
+
+```
 Tests
 ===================
 to run tests:
