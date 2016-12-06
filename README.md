@@ -4,7 +4,7 @@ Useful for composing multiple operations on multiple database connections into a
 Requires MySQL, see https://dev.mysql.com/doc/refman/5.6/en/xa.html
 Installation
 ===================
-Update your composer.json file
+Edit your composer.json file
 ```JSON
 {
     "repositories": [
