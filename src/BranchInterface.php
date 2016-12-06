@@ -32,7 +32,8 @@ interface BranchInterface extends TransactionInterface {
     public function prepare();
 
     /**
-     * @return int
+     * @return int|null the state of the transaction,
+     * null if the transaction has not been started
      */
     public function getState();
 }

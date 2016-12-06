@@ -52,14 +52,16 @@ class Transaction extends Object implements BranchInterface {
     private $_state;
 
     /**
-     * @return int
+     * @inheritdoc
+     * @see BranchInterface::getState()
      */
     public function getState() {
         return $this->_state;
     }
 
     /**
-     * @return static
+     * @inheritdoc
+     * @see BranchInterface::begin()
      */
     public function begin() {
         $this->exec(self::STMT_BEGIN);
@@ -68,7 +70,8 @@ class Transaction extends Object implements BranchInterface {
     }
 
     /**
-     * @return static
+     * @inheritdoc
+     * @see BranchInterface::end()
      */
     public function end() {
         $this->exec(self::STMT_END);
@@ -77,7 +80,8 @@ class Transaction extends Object implements BranchInterface {
     }
 
     /**
-     * @return static
+     * @inheritdoc
+     * @see BranchInterface::prepare()
      */
     public function prepare() {
         $this->exec(self::STMT_PREPARE);
@@ -86,7 +90,8 @@ class Transaction extends Object implements BranchInterface {
     }
 
     /**
-     * @return static
+     * @inheritdoc
+     * @see TransactionInterface::commit()
      */
     public function commit() {
         $this->exec(self::STMT_COMMIT);
@@ -95,7 +100,8 @@ class Transaction extends Object implements BranchInterface {
     }
 
     /**
-     * @return static
+     * @inheritdoc
+     * @see TransactionInterface::rollBack()
      */
     public function rollBack() {
         $this->exec(self::STMT_ROLLBACK);
@@ -104,7 +110,7 @@ class Transaction extends Object implements BranchInterface {
     }
 
     /**
-     * @return string
+     * @inheritdoc
      */
     public function getId() {
         return $this->getTransactionManager()->getTransactionId($this);

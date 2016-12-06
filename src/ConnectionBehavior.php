@@ -15,7 +15,14 @@ use yii\di\Instance;
  * @property Connection $owner
  */
 class ConnectionBehavior extends Behavior {
+    /**
+     * @var TransactionManager
+     */
     private $_transactionManager;
+
+    /**
+     * @var ConnectionOperations
+     */
     private $_operations;
 
     /**
@@ -26,6 +33,11 @@ class ConnectionBehavior extends Behavior {
         parent::attach($owner);
     }
 
+    /**
+     * ConnectionBehavior constructor.
+     * @param TransactionManager $transactionManager
+     * @param array $config
+     */
     public function __construct(TransactionManager $transactionManager, array $config = []) {
         $this->_transactionManager = $transactionManager;
         parent::__construct($config);

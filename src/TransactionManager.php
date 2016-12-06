@@ -83,15 +83,6 @@ class TransactionManager extends Component implements TransactionInterface {
     }
 
     /**
-     * @return \Generator
-     */
-    public function getTransactions() {
-        foreach ($this->_transactions as $transaction) {
-            yield $transaction;
-        }
-    }
-
-    /**
      * @param Transaction $transaction
      */
     public function registerTransaction(Transaction $transaction) {
@@ -143,6 +134,13 @@ class TransactionManager extends Component implements TransactionInterface {
             $id++;
         }
         throw new Exception();
+    }
+
+    /**
+     * @return \SplObjectStorage
+     */
+    protected function getTransactions() {
+        return $this->_transactions;
     }
 
     /**
