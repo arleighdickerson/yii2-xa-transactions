@@ -2,8 +2,10 @@ Yii2 XA Transactions
 ===================
 Useful for composing multiple operations on multiple database connections into a single transactional unit.
 Requires MySQL, see https://dev.mysql.com/doc/refman/5.6/en/xa.html
+
 Installation
 ===================
+
 Edit your composer.json file
 ```JSON
 {
