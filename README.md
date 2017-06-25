@@ -21,6 +21,7 @@ Edit your composer.json file
 }
 ```
 and do a composer update.
+
 Usage
 ===================
 Attach ConnectionBehavior to a Connection instance. Here, we'll use the DI Container to attach it to all connection instances running MySQL
@@ -106,8 +107,10 @@ Yii::$app->on(Controller::EVENT_AFTER_ACTION, function () {
 });
 
 ```
+
 Tests
 ===================
+
 to run tests:
 
 ```bash
