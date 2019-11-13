@@ -4,7 +4,7 @@
 namespace arls\xa;
 
 
-use yii\base\Object;
+use yii\base\BaseObject;
 use yii\db\Connection;
 use Yii;
 
@@ -12,7 +12,7 @@ use Yii;
  * Class ConnectionOperations
  * @package arls\xa
  */
-class ConnectionOperations extends Object {
+class ConnectionOperations extends BaseObject {
     /**
      * @var TransactionManager
      */

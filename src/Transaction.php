@@ -4,7 +4,7 @@
 namespace arls\xa;
 
 use yii\base\InvalidConfigException;
-use yii\base\Object;
+use yii\base\BaseObject;
 use yii\db\Connection;
 use yii\di\Instance;
 
@@ -15,7 +15,7 @@ use yii\di\Instance;
  * @see https://dev.mysql.com/doc/refman/5.6/en/xa.html
  * represents a branch of the global transaction being managed by the transaction manager
  */
-class Transaction extends Object implements BranchInterface {
+class Transaction extends BaseObject implements BranchInterface {
     /**
      * @var Connection the database connection that this transaction is associated with.
      */
